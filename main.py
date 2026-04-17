@@ -61,7 +61,7 @@ def create_task(
 
     return {"task_id": task_id, "status": "created"}
 
-@app.post("/products/{products_id}/reviews")
+@app.post("/products/{product_id}/reviews")
 def submit_review(
     product_id: int, 
     review_data: ReviewSubmission, 
