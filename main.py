@@ -1,9 +1,15 @@
-from fastapi import FastAPI, BackgroundTasks
+from fastapi import FastAPI, BackgroundTasks, UploadFile, File
 from datetime import datetime
 from pydantic import BaseModel
 import json
+from pathlib import Path
+import os
 
 app = FastAPI()
+
+# Create upload directory
+UPLOAD_DIR = Path("uploads")
+UPLOAD_DIR.mkdir(exist_ok=True)
 
 @app.get("/")
 def read_root():
@@ -46,6 +52,26 @@ def analyze_review(customer_id: int, product_id: int, rating: int, review_text: 
 
     print(f"Analyzed review: {rating}/5 stars, sentiment: {sentiment_score}")
 
+def process_document(filename: str, file_size: int, uploaded_by: str):
+    import time
+    time.sleep(3) # Simulate document processing time
+
+    # simulate document analysis
+    file_path = UPLOAD_DIR / filename
+    word_count = file_size // 5 # Rough estimate for demo
+
+    processing_result = {
+        "filename": filename,
+        "file_size": file_size,
+        "uploaded_by": uploaded_by,
+        "word_count": word_count,
+        "status": "processed",
+        "processing_at": datetime.now().isoformat(),
+    }
+
+    with open("document_analysis.json", "a") as f:
+        f.write(json.dumps(processing_result) + "\n")
+
 @app.post("/projects/{project_id}/tasks/")
 def create_task(
     project_id: int, task_data: TaskCreate, background_tasks: BackgroundTasks
@@ -78,3 +104,28 @@ def submit_review(
     )
 
     return {"review_id": review_id, "status": "submitted"}
+
+@app.post("/documents/upload/")
+async def upload_document(
+    file: UploadFile = File(...),
+    uploaded_by: str = "user",
+    background_tasks: BackgroundTasks = BackgroundTasks()
+):
+    # Save file immediately
+    file_path = UPLOAD_DIR / file.filename
+
+    with open(file_path, "wb") as f:
+        content = await file.read()
+        f.write(content)
+        file_size = len(content)
+
+    # Process document in background
+    background_tasks.add_task(process_document, file.filename, file_size, uploaded_by)
+
+    return {
+        "filename": file.filename,
+        "file_size": file_size,
+        "status": "uploaded",
+        "message": "File uploaded successfully and is being processed"
+    }
+    
