@@ -138,13 +138,58 @@ background_tasks.add_task(function_name, arg1, arg2, ...)
 
 ---
 
+### Step 3: Document Upload & Processing
+
+**Endpoint**: `POST /documents/upload/`
+
+**Purpose**: Upload a document file and process it asynchronously in the background
+
+**Request**: Form data with file upload
+
+- `file`: Binary file upload (required)
+- `uploaded_by`: String identifier for who uploaded (default: "user")
+
+**Response**:
+
+```json
+{
+  "filename": "test_document.txt",
+  "file_size": 63,
+  "status": "uploaded",
+  "message": "File uploaded successfully and is being processed"
+}
+```
+
+**Background Task**:
+
+- Saves uploaded file to `uploads/` directory
+- Simulates document processing (3-second delay)
+- Extracts file metadata (filename, size)
+- Estimates word count based on file size (rough calculation: size / 5)
+- Stores processing results with timestamp
+
+**Output File**: `document_analysis.json`
+
+```json
+{
+  "filename": "test_document.txt",
+  "file_size": 63,
+  "uploaded_by": "user",
+  "word_count": 12,
+  "status": "processed",
+  "processing_at": "2026-04-20T23:19:03.181898"
+}
+```
+
+---
+
 ## Output Files
 
-| File                   | Purpose                  | Format                     |
-| ---------------------- | ------------------------ | -------------------------- |
-| `activities.log`       | Timestamped activity log | Plain text, line-delimited |
-| `review_analysis.json` | Analysis results         | JSON, line-delimited       |
-
+| File                     | Purpose                     | Format                     |
+| ------------------------ | --------------------------- | -------------------------- |
+| `activities.log`         | Timestamped activity log    | Plain text, line-delimited |
+| `review_analysis.json`   | Review analysis results     | JSON, line-delimited       |
+| `document_analysis.json` | Document processing results | JSON, line-delimited       |
 
 ## Development Notes
 
@@ -167,4 +212,9 @@ curl -X POST "http://127.0.0.1:8000/projects/101/tasks/" \
 curl -X POST "http://127.0.0.1:8000/products/789/reviews" \
   -H "Content-Type: application/json" \
   -d '{"customer_id":456,"rating":5,"review_text":"This product is amazing and excellent quality!"}'
+
+# Test Document Upload
+curl -X POST "http://127.0.0.1:8000/documents/upload/" \
+  -F "file=@test_document.txt" \
+  -F "uploaded_by=john_doe"
 ```
